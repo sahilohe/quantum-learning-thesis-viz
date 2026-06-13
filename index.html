@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quantum Learning - Allen Liu (MIT 2025)</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<nav id="nav">
+  <span class="nav-title">&#9635; QUANTUM LEARNING</span>
+  <div class="nav-links">
+    <a href="#sec-hero">INTRO</a>
+    <a href="#sec-hamiltonian">PART 1</a>
+    <a href="#sec-entanglement">PART 2</a>
+    <a href="#sec-learning">PART 3</a>
+    <a href="#sec-tomography">PART 4</a>
+  </div>
+</nav>
+
+<!-- ====== HERO ====== -->
+<section id="sec-hero" class="section hero">
+  <canvas id="hero-canvas"></canvas>
+  <div class="hero-overlay">
+    <h1>Learning Theoretic Foundations<br>for Understanding Quantum Systems</h1>
+    <p class="hero-author">Allen Liu. MIT PhD Thesis 2025</p>
+    <p class="hero-sub">
+      What can we know about a quantum system just by measuring it?<br>
+      This thesis gives surprising answers. It proves new universal laws.<br>
+      It gives efficient algorithms where none were thought possible.
+    </p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">&#10102;</span><span class="stat-label">Entanglement dies above a critical temperature. The system size does not matter.</span></div>
+      <div class="stat"><span class="stat-num">&#10103;</span><span class="stat-label">Hamiltonian learning is efficient at any temperature. This breaks a conjectured barrier.</span></div>
+      <div class="stat"><span class="stat-num">&#10104;</span><span class="stat-label">Optimal copy complexity for tomography with limited measurements.</span></div>
+    </div>
+    <div class="hero-cta">
+      <span>Scroll to explore &darr;</span>
+    </div>
+  </div>
+</section>
+
+<!-- ====== PART 1: LOCAL HAMILTONIAN & GIBBS STATE ====== -->
+<section id="sec-hamiltonian" class="section">
+  <div class="section-header">
+    <span class="section-num">PART 1</span>
+    <div>
+      <h2>Local Hamiltonians and the Gibbs State</h2>
+      <p class="section-subtitle">The basic model for quantum many-body systems</p>
+    </div>
+  </div>
+
+  <div class="explainer-card">
+    <h3>What is a quantum many-body system?</h3>
+    <p>
+      Imagine a grid of particles. Each one is a tiny magnet called a <strong>qubit</strong>.
+      In real materials, nearby particles interact. Their spins influence each other.
+      The <strong>Hamiltonian</strong> <em>H</em> is a giant matrix that encodes all these interactions.
+      It works like an energy function for the system. Writing it down takes a matrix of size
+      <strong>2<sup>n</sup> by 2<sup>n</sup></strong>. That is exponentially large in the number of particles n.
+      For just 50 particles, the matrix is already too big to store on any classical computer.
+    </p>
+    <p>
+      But nature has a trick. The interactions are <strong>local</strong>. Each particle only talks to its
+      neighbors. So the Hamiltonian can be written as a sum of local terms:
+      <code>H = E&#8321; + E&#8322; + ... + E<sub>m</sub></code>. Each E<sub>a</sub> only touches a few nearby particles.
+      This locality is what makes the problem tractable.
+    </p>
+  </div>
+
+  <div class="explainer-card">
+    <h3>What is the Gibbs state?</h3>
+    <p>
+      At a given <strong>temperature</strong> <em>T</em> (or inverse temperature <strong>&beta; = 1/T</strong>), the
+      system settles into thermal equilibrium. Its state is the <strong>Gibbs state</strong>:
+      <code>&rho;<sub>&beta;</sub> = e<sup>-&beta;H</sup> / tr(e<sup>-&beta;H</sup>)</code>
+    </p>
+    <p>
+      Think of it as the quantum version of a Boltzmann distribution. At <strong>high temperature</strong>
+      (small &beta;), the state is a chaotic soup. It is close to <strong>maximally mixed</strong>, meaning all
+      configurations are equally likely. At <strong>low temperature</strong> (large &beta;), the system freezes
+      into ordered states. The lowest energy configurations dominate. This is the physics of
+      <em>phase transitions</em>.
+    </p>
+  </div>
+
+  <div class="viz-row">
+    <div class="viz-panel">
+      <div class="panel-controls">
+        <label>&beta; (inverse temp): <span id="beta-display">1.0</span></label>
+        <input type="range" id="beta-slider" min="0.1" max="5.0" step="0.1" value="1.0">
+      </div>
+      <div class="panel-controls">
+        <label>Grid: <span id="gridsize-display">6</span>&times;<span id="gridsize-display2">6</span></label>
+        <input type="range" id="gridsize-slider" min="3" max="10" step="1" value="6">
+      </div>
+      <canvas id="hamiltonian-canvas" width="500" height="500"></canvas>
+      <p class="canvas-caption">
+        Each cell is a qubit. Color shows magnetization &#10216;&#963;<sub>z</sub>&#10217;. Warm colors mean spin up.
+        Cool colors mean spin down. Arrows show spin direction. Gray lines are the interactions between neighbors.
+      </p>
+    </div>
+    <div class="viz-sidebar">
+      <h3>What to watch</h3>
+      <p>
+        <strong>&beta; small</strong> (hot). Spins point every which way. The state is nearly maximally mixed.
+        All configurations are equally likely.
+      </p>
+      <p>
+        <strong>&beta; large</strong> (cold). Spins align. The system goes through a <strong>phase transition</strong>
+        into an ordered state. It works just like a magnet when you cool it below its Curie temperature.
+      </p>
+      <p>
+        This temperature driven competition between order and disorder is the key to everything that follows.
+      </p>
+      <hr>
+      <div class="side-stat">
+        <span class="side-stat-val" id="ham-magnetization">0.00</span>
+        <span class="side-stat-label">Avg Magnetization &#10216;&#963;<sub>z</sub>&#10217;</span>
+      </div>
+      <div class="side-stat">
+        <span class="side-stat-val" id="ham-purity">0.00</span>
+        <span class="side-stat-label">Purity tr(&rho;&sup2;). This measures how mixed the state is.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== PART 2: SUDDEN DEATH OF ENTANGLEMENT ====== -->
+<section id="sec-entanglement" class="section">
+  <div class="section-header">
+    <span class="section-num">PART 2</span>
+    <div>
+      <h2>Sudden Death of Entanglement</h2>
+      <p class="section-subtitle">A universal law. Above a critical temperature, entanglement vanishes completely.</p>
+    </div>
+  </div>
+
+  <div class="explainer-card">
+    <h3>What is entanglement?</h3>
+    <p>
+      Entanglement is the quintessential quantum property. As Schr&ouml;dinger put it:
+      &ldquo;I would not call that one, but rather <strong>the characteristic trait of quantum mechanics</strong>.&rdquo;
+    </p>
+    <p>
+      A state is <strong>separable</strong> (not entangled) if it can be written as a mixture of
+      product states: &rho; = &Sigma; p<sub>k</sub> &rho;<sub>k</sub><sup>A</sup> &#8855; &rho;<sub>k</sub><sup>B</sup>.
+      In that case the correlations between particles are purely classical. Think of two coins
+      that are correlated through a shared probability distribution.
+    </p>
+    <p>
+      If the state cannot be written this way, it is <strong>entangled</strong>. The particles share
+      intrinsically quantum correlations. There is no classical analog.
+    </p>
+  </div>
+
+  <div class="explainer-card">
+    <h3>The result (Theorem 1.3.1)</h3>
+    <p>
+      Take <strong>any</strong> local Hamiltonian. There is a critical inverse temperature
+      <strong>&beta;<sub>c</sub></strong>. This critical temperature depends only on the <strong>geometry</strong> of the
+      interactions (for example a 2D grid or a 3D lattice). It does <strong>not</strong> depend on the system size n.
+    </p>
+    <p>
+      Above &beta;<sub>c</sub> (which means at high enough temperature), the Gibbs state is
+      <strong>separable</strong>. It has exactly zero entanglement. The transition is sudden.
+      As you cross &beta;<sub>c</sub>, all thermal entanglement disappears.
+    </p>
+    <p>
+      This is striking because previous work could only prove separability at
+      temperatures that were <strong>exponentially small</strong> in n. Everyone knew entanglement
+      must die at some point. But the fact that it happens at a constant temperature
+      regardless of how big the system is, that is a universal law.
+    </p>
+    <div class="insight-box">
+      <strong>Proof idea:</strong> The proof uses a quantum version of the sampling to counting
+      reduction. This idea comes from classical algorithms for approximate counting.
+      It decomposes the Gibbs state by sampling one particle at a time, factorizing it
+      into a product of conditional states. If each conditional state is separable, the
+      whole state is separable.
+    </div>
+  </div>
+
+  <div class="viz-row">
+    <div class="viz-panel">
+      <div class="panel-controls">
+        <label>&beta;: <span id="ent-beta-display">2.0</span></label>
+        <input type="range" id="ent-beta-slider" min="0.0" max="4.0" step="0.05" value="2.0">
+      </div>
+      <div class="panel-controls">
+        <label>n: <span id="ent-n-display">16</span></label>
+        <input type="range" id="ent-n-slider" min="4" max="64" step="1" value="16">
+      </div>
+      <canvas id="entanglement-canvas" width="600" height="400"></canvas>
+      <p class="canvas-caption">
+        Phase diagram. The pink region (&beta; below &beta;<sub>c</sub>) is entangled. The blue region
+        (&beta; above &beta;<sub>c</sub>) is separable. The critical line does not move as n grows.
+      </p>
+    </div>
+    <div class="viz-sidebar">
+      <h3>Why this matters</h3>
+      <p>
+        Previous work could only bound proxy measures like mutual information or
+        correlation functions. Those combine both classical and quantum correlations.
+        This is the first result that directly controls entanglement itself, independent
+        of classical correlations.
+      </p>
+      <hr>
+      <p>
+        The theorem also proves that above &beta;<sub>c</sub>, the Gibbs state can be
+        <strong>prepared efficiently</strong> on a classical computer (Theorem 1.3.2).
+        This means this regime offers no exponential quantum speedup for Gibbs sampling.
+      </p>
+      <hr>
+      <div class="side-stat">
+        <span class="side-stat-val" id="ent-phase">SEPARABLE</span>
+        <span class="side-stat-label">Current phase</span>
+      </div>
+      <div class="side-stat">
+        <span class="side-stat-val" id="ent-betac-display">&beta;_c = 1.8</span>
+        <span class="side-stat-label">Critical &beta; (depends on geometry)</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== PART 3: HAMILTONIAN LEARNING ====== -->
+<section id="sec-learning" class="section">
+  <div class="section-header">
+    <span class="section-num">PART 3</span>
+    <div>
+      <h2>Hamiltonian Learning at Any Temperature</h2>
+      <p class="section-subtitle">Recovering a system's Hamiltonian from measurements of its Gibbs state.</p>
+    </div>
+  </div>
+
+  <div class="explainer-card">
+    <h3>The problem</h3>
+    <p>
+      You are given many copies of an unknown Gibbs state &rho;<sub>&beta;</sub>. You can measure
+      local observables like tr(X<sub>a</sub> &rho;<sub>&beta;</sub>) where X<sub>a</sub> are Pauli
+      operators on small groups of particles. From these measurements, you want to
+      <strong>recover the Hamiltonian H</strong> that produced the state.
+    </p>
+    <p>
+      This is crucial for <strong>quantum device benchmarking</strong>. If someone builds
+      a quantum simulator, you need to verify that it implements the right Hamiltonian.
+      It is also fundamental physics. We want to discover what Hamiltonians nature uses.
+    </p>
+  </div>
+
+  <div class="explainer-card">
+    <h3>The barrier at low temperature</h3>
+    <p>
+      Previous algorithms by Anshu and others (2020) and by Haah, Kothari and Tang (2022)
+      only worked at <strong>high temperature</strong> (small &beta;). At low temperature, all their tools fail.
+    </p>
+    <ul>
+      <li><strong>High-temperature series expansion</strong> diverges.</li>
+      <li><strong>Cluster expansion</strong> fails.</li>
+      <li><strong>Markov property</strong> breaks down in quantum systems.</li>
+      <li><strong>Partition function estimation</strong> becomes computationally hard.</li>
+    </ul>
+    <p>
+      The field believed low-temperature learning was <strong>intractable</strong>. Some even
+      conjectured that low-temperature Gibbs states are <strong>pseudorandom</strong>. That would mean
+      no efficient algorithm could learn from them at all.
+    </p>
+  </div>
+
+  <div class="explainer-card">
+    <h3>Liu's breakthrough (Theorem 1.3.3)</h3>
+    <p>
+      The result gives the <strong>first efficient algorithm</strong> for Hamiltonian learning
+      at <strong>any constant temperature</strong>. It runs in time polynomial in n and 1/&epsilon;.
+    </p>
+    <div class="insight-box">
+      <strong>Key ideas:</strong><br>
+      1. Instead of matching just local marginals (which leads to an intractable system),
+      you measure a <strong>richer family of statistics</strong>. This uses a new polynomial
+      approximation of the matrix exponential e<sup>-&beta;H</sup>.<br>
+      2. Formulate the estimation as a <strong>sum-of-squares (SoS)</strong> semidefinite
+      program, which can be solved in polynomial time.<br>
+      3. The SoS proof uses the fact that nested commutators of local terms are
+      <strong>small</strong>. This is how locality tames the problem even at low temperature.
+    </div>
+  </div>
+
+  <div class="viz-row">
+    <div class="viz-panel">
+      <div class="panel-controls">
+        <span><strong>True coefficients</strong> (hidden) vs <strong>estimates</strong> (recovered):</span>
+      </div>
+      <div class="panel-controls">
+        <button id="learn-new-ham">&#10227; NEW HAMILTONIAN</button>
+        <button id="learn-measure">&#9850; MEASURE</button>
+        <button id="learn-autorun">&#9654; AUTO-RUN</button>
+        <span id="learn-step-display">Step 0</span>
+      </div>
+      <div class="panel-controls">
+        <label>&beta;: <span id="learn-beta-display">1.0</span></label>
+        <input type="range" id="learn-beta-slider" min="0.2" max="3.0" step="0.1" value="1.0">
+      </div>
+      <canvas id="learning-canvas" width="500" height="400"></canvas>
+      <p class="canvas-caption">
+        Black bars are the true Hamiltonian coefficients. Colored bars are the algorithm estimates.
+        Blue means accurate. Orange means partial. Red means poor. Each measurement gives the
+        algorithm one noisy estimate of tr(X<sub>a</sub>&rho;<sub>&beta;</sub>).
+      </p>
+    </div>
+    <div class="viz-sidebar">
+      <h3>Algorithm intuition</h3>
+      <p>
+        <strong>1. Measure</strong> local observables tr(X<sub>a</sub>&rho;<sub>&beta;</sub>).
+        Each gives partial information about the Hamiltonian coefficients.
+      </p>
+      <p>
+        <strong>2. Set up equations</strong> using a polynomial approximation to the
+        matrix exponential. This creates a system that connects the measurements to
+        the unknown parameters.
+      </p>
+      <p>
+        <strong>3. Solve via SoS</strong>. This is a semidefinite relaxation of the polynomial
+        system. This is what makes the algorithm efficient.
+      </p>
+      <hr>
+      <div class="side-stat">
+        <span class="side-stat-val" id="learn-error">&infin;</span>
+        <span class="side-stat-label">&#8467;&#8322; recovery error</span>
+      </div>
+      <div class="side-stat">
+        <span class="side-stat-val" id="learn-params">0/8</span>
+        <span class="side-stat-label">Parameters within 15% of true value</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== PART 4: TOMOGRAPHY & CERTIFICATION ====== -->
+<section id="sec-tomography" class="section">
+  <div class="section-header">
+    <span class="section-num">PART 4</span>
+    <div>
+      <h2>Quantum State Tomography and Certification</h2>
+      <p class="section-subtitle">Learning and testing unknown quantum states from limited measurements.</p>
+    </div>
+  </div>
+
+  <div class="explainer-card">
+    <h3>The setting</h3>
+    <p>
+      You have an unknown quantum state &rho;. This is a d by d density matrix, where d = 2<sup>n</sup>
+      for n qubits. You can prepare <strong>many copies</strong> of &rho;, measure them,
+      and get classical outcomes. How many copies do you need to learn &rho; to accuracy &epsilon;?
+    </p>
+    <p>
+      This is <strong>quantum state tomography</strong>. It is the most fundamental learning
+      task in quantum information. It is the quantum equivalent of estimating a probability
+      distribution from samples.
+    </p>
+  </div>
+
+  <div class="explainer-card">
+    <h3>Key constraint: limited quantum hardware</h3>
+    <p>
+      The best tomography protocols by Haah and others (2017) and by O'Donnell and Wright (2017)
+      use <strong>entangled measurements</strong> across all n copies at the same time. This
+      requires quantum memory and multi-copy gates. Those are far beyond current devices.
+    </p>
+    <p>
+      The thesis studies two realistic settings.
+    </p>
+    <ul>
+      <li><strong>Single-copy measurements:</strong> Measure one copy at a time,
+        then discard it. No quantum memory is needed. This matches current hardware.</li>
+      <li><strong>t-copy measurements:</strong> Measure t copies together (the device
+        can store a few at a time). This interpolates between single-copy and fully entangled.</li>
+    </ul>
+  </div>
+
+  <div class="explainer-card">
+    <h3>Results (Theorems 1.3.5 through 1.3.8)</h3>
+    <div class="results-grid">
+      <div class="result-item">
+        <span class="result-label">Single-copy tomography:</span>
+        <span class="result-val">&Theta;(d&sup3;/&epsilon;&sup2;) copies</span>
+        <span class="result-detail">This matches the upper bound of random measurements. Adaptivity does not help for trace distance.</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">Single-copy (fidelity):</span>
+        <span class="result-val">&Theta;&#771;(d&sup3;/&gamma;) copies</span>
+        <span class="result-detail">For infidelity &gamma;, adaptivity does help. This is a rare separation between adaptive and nonadaptive.</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">t-Copy tomography:</span>
+        <span class="result-val">&Theta;&#771;(d&sup3;/(&radic;t &epsilon;&sup2;))</span>
+        <span class="result-detail">Smooth tradeoff. More copies measured together means fewer total copies needed.</span>
+      </div>
+      <div class="result-item">
+        <span class="result-label">State certification:</span>
+        <span class="result-val">&Omega;(d&sup3;&frasl;&sup2;/&epsilon;&sup2;)</span>
+        <span class="result-detail">Testing if &rho; = &sigma; (known) versus &rho; &ne; &sigma;. A tight lower bound that closes a gap.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="explainer-card">
+    <h3>Why lower bounds are hard</h3>
+    <p>
+      Classical lower bound techniques like Fano's inequality assume <strong>independent</strong>
+      samples. In the quantum setting, the learner can choose measurements
+      <strong>adaptively</strong> based on previous outcomes. Liu introduces a new framework.
+    </p>
+    <div class="insight-box">
+      <strong>Adaptive lower bound framework:</strong> Sample the unknown state &rho; from a
+      prior distribution. Then <strong>directly track the posterior</strong> after each
+      measurement. Show that no matter what adaptive strategy the learner uses, the
+      posterior remains too spread out to identify &rho; accurately. This is a bare-handed
+      approach that works even when classical information-theoretic tools fail.
+    </div>
+  </div>
+
+  <div class="viz-row">
+    <div class="viz-panel">
+      <div class="panel-controls">
+        <label>Dimension d: <span id="tomo-d-display">64</span></label>
+        <input type="range" id="tomo-d-slider" min="4" max="256" step="1" value="64">
+      </div>
+      <div class="panel-controls">
+        <label>Accuracy &epsilon;: <span id="tomo-eps-display">0.10</span></label>
+        <input type="range" id="tomo-eps-slider" min="0.01" max="0.5" step="0.01" value="0.1">
+      </div>
+      <div class="panel-controls">
+        <span>Protocol:</span>
+        <button id="tomo-mode-single" class="tomo-btn active">Single-copy</button>
+        <button id="tomo-mode-tcopy" class="tomo-btn">t-Copy (t=2)</button>
+        <button id="tomo-mode-ent" class="tomo-btn">Fully entangled</button>
+      </div>
+      <canvas id="tomography-canvas" width="500" height="400"></canvas>
+      <p class="canvas-caption">
+        Log-log plot. It shows copies needed versus dimension d. Higher curve means worse.
+        Notice the gap between single-copy (&Theta;(d&sup3;/&epsilon;&sup2;)) and fully entangled
+        (&Theta;(d&sup2;/&epsilon;&sup2;)).
+      </p>
+    </div>
+    <div class="viz-sidebar">
+      <h3>Key numbers</h3>
+      <p>
+        For d=64 and &epsilon;=0.1:
+      </p>
+      <p>
+        <strong>Single-copy:</strong> about 2.6M copies<br>
+        <strong>t-Copy (t=2):</strong> about 1.9M copies<br>
+        <strong>Fully entangled:</strong> about 410K copies
+      </p>
+      <hr>
+      <p>
+        The t-copy tradeoff (Theorem 1.3.8) is the first smooth interpolation between
+        these extremes. It resolves an incompatibility between Schur sampling
+        (a biased estimator that needs many copies at once) and single-copy averaging
+        (unbiased but less informative).
+      </p>
+      <hr>
+      <div class="side-stat">
+        <span class="side-stat-val" id="tomo-copies">0</span>
+        <span class="side-stat-label">Required copies n for given d and &epsilon;</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p><strong>Reference:</strong> <em>Learning Theoretic Foundations for Understanding Quantum Systems</em>. Allen Liu. MIT EECS PhD Thesis. May 2025.</p>
+  <p>Built as an interactive companion. Not affiliated with the author.</p>
+</footer>
+
+<script src="scripts.js"></script>
+</body>
+</html>
